@@ -1,0 +1,50 @@
+services:
+  calendar:
+    build:
+      context: .
+      target: dev
+    image: osionos-calendar-dev:latest
+    command: ["npm", "run", "dev"]
+    env_file:
+      - path: ./.env.local
+        required: false
+      - path: ./.env
+        required: false
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: "true"
+      VITE_CALENDAR_BRIDGE_URL: http://localhost:4200
+    volumes:
+      - ./:/app
+      - calendar-node-modules:/app/node_modules
+    ports:
+      - "127.0.0.1:3003:3003"
+    depends_on:
+      calendar-bridge:
+        condition: service_started
+
+  calendar-bridge:
+    build:
+      context: .
+      target: dev
+    image: osionos-calendar-bridge-dev:latest
+    command: ["npm", "run", "bridge"]
+    env_file:
+      - path: ./.env.local
+        required: false
+      - path: ./.env
+        required: false
+    environment:
+      NODE_ENV: development
+      CALENDAR_BRIDGE_PORT: 4200
+      CALENDAR_APP_ORIGIN: http://localhost:3003
+      CALENDAR_BRIDGE_PUBLIC_ORIGIN: http://localhost:4200
+      CALENDAR_REDIRECT_URI: http://localhost:4200/auth/google/callback
+    volumes:
+      - ./:/app
+      - calendar-node-modules:/app/node_modules
+    ports:
+      - "127.0.0.1:4200:4200"
+
+volumes:
+  calendar-node-modules:
