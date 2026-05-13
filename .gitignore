@@ -3,5 +3,8 @@ dist/
 .env
 .env.*
 !.env.example
+.env*local
+.env\ copy*
+.vault/
 .calendar-bridge-*.json
 prompt
