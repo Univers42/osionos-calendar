@@ -466,6 +466,27 @@ async function baasRequest(path, options = {}) {
   return payload;
 }
 
+let baasStatusCheckedAt = 0;
+let baasStatusRefreshing = false;
+const BAAS_STATUS_TTL_MS = 30_000;
+
+/**
+ * Last-known BaaS status, refreshed in the background at most every 30s.
+ * /health must answer instantly even (especially) when the gateway is down —
+ * the live probe hangs ~5s in that case, which made Docker's 3s healthcheck
+ * mark the bridge unhealthy forever although the bridge itself was fine.
+ */
+function baasStatusSnapshot() {
+  if (!baasStatusRefreshing && Date.now() - baasStatusCheckedAt > BAAS_STATUS_TTL_MS) {
+    baasStatusRefreshing = true;
+    checkBaaS().catch(() => {}).finally(() => {
+      baasStatusCheckedAt = Date.now();
+      baasStatusRefreshing = false;
+    });
+  }
+  return { ...baasRuntime };
+}
+
 async function checkBaaS() {
   if (!baasUrl) {
     baasRuntime.configured = false;
@@ -649,7 +670,7 @@ async function handleSessionRoutes(request, requestUrl, response) {
     return true;
   }
   if (request.method === 'GET' && requestUrl.pathname === '/health') {
-    json(response, 200, { ok: true, provider: 'google-calendar', baas: await checkBaaS() });
+    json(response, 200, { ok: true, provider: 'google-calendar', baas: baasStatusSnapshot() });
     return true;
   }
   if (request.method === 'GET' && requestUrl.pathname === '/session') {
