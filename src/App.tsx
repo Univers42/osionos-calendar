@@ -29,11 +29,13 @@ import {
   syncBridgeEvents,
   updateBridgeEvent,
 } from './lib/calendarBridge';
+import { isBridgeEnabled, LOCAL_ONLY_NOTICE, resolveBaasUrl, resolveBridgeEndpoint } from './lib/bridgeConfig';
 import { addDays, clampDateRange, formatRangeTitle, moveCursor, startOfDay, viewRange } from './lib/date';
 import { loadLatestCalendarCache, saveCalendarRangeCache } from './lib/calendarCache';
 import type { CalendarEvent, CalendarSource, CalendarView, ConnectorState } from './types';
 
-const BRIDGE_ENDPOINT = import.meta.env.VITE_CALENDAR_BRIDGE_URL || 'http://localhost:4200';
+const BRIDGE_ENDPOINT = resolveBridgeEndpoint(import.meta.env.VITE_CALENDAR_BRIDGE_URL, import.meta.env.DEV);
+const BRIDGE_ENABLED = isBridgeEnabled(BRIDGE_ENDPOINT);
 const LOCAL_ACCOUNT = 'Local workspace';
 const LOCAL_COLORS = ['#de5550', '#63d18d', '#51ace3', '#f9c344', '#8783d1', '#d477b8'];
 
@@ -49,7 +51,7 @@ const INITIAL_CONNECTOR: ConnectorState = {
   baas: {
     configured: false,
     connected: false,
-    url: import.meta.env.VITE_CALENDAR_BAAS_URL || 'http://localhost:8000',
+    url: BRIDGE_ENABLED ? resolveBaasUrl(import.meta.env.VITE_CALENDAR_BAAS_URL, import.meta.env.DEV) : '',
     message: 'BaaS status has not been checked yet.',
     lastMirrorAt: null,
   },
@@ -116,7 +118,9 @@ export const App: React.FC = () => {
   const [connectorOpen, setConnectorOpen] = useState(false);
   const [connector, setConnector] = useState<ConnectorState>(INITIAL_CONNECTOR);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [notice, setNotice] = useState('Local sample calendar is ready. Connect Google Calendar when your OAuth credentials are configured.');
+  const [notice, setNotice] = useState(BRIDGE_ENABLED
+    ? 'Local sample calendar is ready. Connect Google Calendar when your OAuth credentials are configured.'
+    : 'Local sample calendar is ready.');
 
   const range = useMemo(() => viewRange(view, cursorDate), [cursorDate, view]);
   const rangeLabel = useMemo(() => formatRangeTitle(view, cursorDate), [cursorDate, view]);
@@ -169,10 +173,11 @@ export const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    refreshSession();
+    if (BRIDGE_ENABLED) refreshSession();
   }, [refreshSession]);
 
   const syncVisibleRange = useCallback(async () => {
+    if (!BRIDGE_ENABLED) return;
     setIsSyncing(true);
     try {
       const session = connector.connected ? null : await refreshSession();
@@ -360,20 +365,25 @@ export const App: React.FC = () => {
           onPrevious={() => setCursorDate((current) => moveCursor(view, current, -1))}
           onNext={() => setCursorDate((current) => moveCursor(view, current, 1))}
           onCreateEvent={() => createDraftAt(cursorDate)}
-          onRefresh={syncVisibleRange}
+          onRefresh={BRIDGE_ENABLED ? syncVisibleRange : undefined}
           onSearchChange={setSearch}
           onToggleSidebar={() => setSidebarOpen((current) => !current)}
         />
 
         <div className="calendar-statusbar">
-          <button className="calendar-status-pill" type="button" onClick={() => setConnectorOpen(true)}>
-            <span className={connector.connected ? 'calendar-status-dot is-connected' : 'calendar-status-dot'} />
-            {connector.connected ? connector.account : 'Google not connected'}
-          </button>
-          <button className="calendar-status-pill" type="button" onClick={() => setConnectorOpen(true)}>
-            <span className={connector.baas.connected ? 'calendar-status-dot is-connected' : 'calendar-status-dot'} />
-            BaaS {connector.baas.connected ? 'mirroring' : 'standby'}
-          </button>
+          {BRIDGE_ENABLED ? (
+            <>
+            <button className="calendar-status-pill" type="button" onClick={() => setConnectorOpen(true)}>
+              <span className={connector.connected ? 'calendar-status-dot is-connected' : 'calendar-status-dot'} />
+              {connector.connected ? connector.account : 'Google not connected'}
+            </button>
+            <button className="calendar-status-pill" type="button" onClick={() => setConnectorOpen(true)}>
+              <span className={connector.baas.connected ? 'calendar-status-dot is-connected' : 'calendar-status-dot'} />
+              BaaS {connector.baas.connected ? 'mirroring' : 'standby'}
+            </button>
+            </>
+          ) : null}
+          {BRIDGE_ENABLED ? null : <strong className="calendar-local-label" role="note">{LOCAL_ONLY_NOTICE}</strong>}
           <p>{notice}</p>
         </div>
 
@@ -408,7 +418,7 @@ export const App: React.FC = () => {
       </section>
 
       <ConnectorModal
-        open={connectorOpen}
+        open={connectorOpen && BRIDGE_ENABLED}
         connector={connector}
         isSyncing={isSyncing}
         onClose={() => setConnectorOpen(false)}

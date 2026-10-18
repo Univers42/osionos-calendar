@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 
 import { addMonths, dateKey, formatMonthTitle, isSameDay, isSameMonth, monthMatrix } from '../lib/date';
+import { isBridgeEnabled } from '../lib/bridgeConfig';
 import type { CalendarSource, ConnectorState } from '../types';
 
 interface CalendarSidebarProps {
@@ -62,6 +63,8 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
   const sourceGroups = useMemo(() => groupSources(sources), [sources]);
   const miniDays = useMemo(() => monthMatrix(miniDate), [miniDate]);
 
+  const bridgeEnabled = isBridgeEnabled(connector.endpoint);
+
   return (
     <aside className={open ? 'calendar-sidebar' : 'calendar-sidebar calendar-sidebar--closed'}>
       <div className="calendar-sidebar__brand">
@@ -69,7 +72,7 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
           <span className="calendar-sidebar__mark">O</span>
           <span>
             <strong>osionos Calendar</strong>
-            <small>{connector.connected ? connector.account : 'Local + Google bridge'}</small>
+            <small>{bridgeEnabled ? (connector.connected ? connector.account : 'Local + Google bridge') : 'Local workspace'}</small>
           </span>
         </button>
       </div>
@@ -107,11 +110,13 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
         </div>
       </div>
 
-      <button className="calendar-sidebar-link calendar-sidebar-link--strong" type="button" onClick={onOpenConnector}>
-        <Link size={17} />
-        Scheduling
-        <span className={connector.connected ? 'calendar-status-dot is-connected' : 'calendar-status-dot'} />
-      </button>
+      {bridgeEnabled ? (
+        <button className="calendar-sidebar-link calendar-sidebar-link--strong" type="button" onClick={onOpenConnector}>
+          <Link size={17} />
+          Scheduling
+          <span className={connector.connected ? 'calendar-status-dot is-connected' : 'calendar-status-dot'} />
+        </button>
+      ) : null}
 
       <div className="calendar-sidebar-search">
         <span>Meet with...</span>
@@ -146,10 +151,12 @@ export const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
           </section>
         ))}
 
-        <button className="calendar-add-button" type="button" onClick={onOpenConnector}>
-          <CalendarPlus size={17} />
-          Add calendar account
-        </button>
+        {bridgeEnabled ? (
+          <button className="calendar-add-button" type="button" onClick={onOpenConnector}>
+            <CalendarPlus size={17} />
+            Add calendar account
+          </button>
+        ) : null}
         <button className="calendar-add-button" type="button" onClick={onCreateSource}>
           <Plus size={17} />
           Add local calendar

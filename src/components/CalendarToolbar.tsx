@@ -26,7 +26,7 @@ interface CalendarToolbarProps {
   onPrevious: () => void;
   onNext: () => void;
   onCreateEvent: () => void;
-  onRefresh: () => void;
+  onRefresh?: () => void;
   onSearchChange: (value: string) => void;
   onToggleSidebar: () => void;
 }
@@ -96,9 +96,11 @@ export const CalendarToolbar: React.FC<CalendarToolbarProps> = ({
           </button>
         ))}
       </div>
-      <button className="calendar-icon-button" type="button" onClick={onRefresh} title="Sync visible range" disabled={isSyncing}>
-        <RefreshCw size={18} className={isSyncing ? 'is-spinning' : ''} />
-      </button>
+      {onRefresh ? (
+        <button className="calendar-icon-button" type="button" onClick={onRefresh} title="Sync visible range" disabled={isSyncing}>
+          <RefreshCw size={18} className={isSyncing ? 'is-spinning' : ''} />
+        </button>
+      ) : null}
     </div>
   </header>
 );

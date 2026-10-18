@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+import { isBridgeEnabled } from './bridgeConfig';
 import type { CalendarEvent, CalendarProvider, CalendarRange, CalendarSource, ConnectorState } from '../types';
 
 export interface BridgeSessionResponse {
@@ -49,6 +50,13 @@ function bridgeBase(endpoint: string) {
   return endpoint.trim().replace(/\/+$/, '');
 }
 
+// Single exit to the network: every bridge call passes here, so an empty endpoint
+// fails before fetch is ever reached.
+function bridgeFetch(endpoint: string, path: string, init?: RequestInit) {
+  if (!isBridgeEnabled(endpoint)) throw new Error('No calendar bridge is configured');
+  return fetch(`${bridgeBase(endpoint)}${path}`, init);
+}
+
 async function readJson<T>(response: Response): Promise<T> {
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -59,39 +67,40 @@ async function readJson<T>(response: Response): Promise<T> {
 }
 
 export async function loadCalendarSession(endpoint: string): Promise<BridgeSessionResponse> {
-  const response = await fetch(`${bridgeBase(endpoint)}/session`);
+  const response = await bridgeFetch(endpoint, '/session');
   return readJson<BridgeSessionResponse>(response);
 }
 
 export async function loadBaaSStatus(endpoint: string) {
-  const response = await fetch(`${bridgeBase(endpoint)}/baas/status`);
+  const response = await bridgeFetch(endpoint, '/baas/status');
   return readJson<ConnectorState['baas']>(response);
 }
 
 export function openCalendarAuth(endpoint: string) {
+  if (!isBridgeEnabled(endpoint)) throw new Error('No calendar bridge is configured');
   const authWindow = globalThis.open(`${bridgeBase(endpoint)}/auth/google/start`, '_blank', 'noopener,noreferrer');
   if (!authWindow) throw new Error('The browser blocked the Google Calendar authorization window.');
 }
 
 export async function disconnectCalendarBridge(endpoint: string): Promise<BridgeSessionResponse> {
-  const response = await fetch(`${bridgeBase(endpoint)}/disconnect`, { method: 'POST' });
+  const response = await bridgeFetch(endpoint, '/disconnect', { method: 'POST' });
   return readJson<BridgeSessionResponse>(response);
 }
 
 export async function loadBridgeCalendars(endpoint: string): Promise<BridgeCalendarsResponse> {
-  const response = await fetch(`${bridgeBase(endpoint)}/calendars`);
+  const response = await bridgeFetch(endpoint, '/calendars');
   return readJson<BridgeCalendarsResponse>(response);
 }
 
 export async function syncBridgeEvents(endpoint: string, range: CalendarRange, calendarIds: string[]): Promise<BridgeEventsResponse> {
   const params = new URLSearchParams({ timeMin: range.start, timeMax: range.end });
   if (calendarIds.length) params.set('calendarIds', calendarIds.join(','));
-  const response = await fetch(`${bridgeBase(endpoint)}/events?${params}`);
+  const response = await bridgeFetch(endpoint, `/events?${params}`);
   return readJson<BridgeEventsResponse>(response);
 }
 
 export async function createBridgeEvent(endpoint: string, event: CalendarEvent, calendar: CalendarSource): Promise<BridgeEventResponse> {
-  const response = await fetch(`${bridgeBase(endpoint)}/events`, {
+  const response = await bridgeFetch(endpoint, '/events', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ event, calendar }),
@@ -102,7 +111,7 @@ export async function createBridgeEvent(endpoint: string, event: CalendarEvent, 
 export async function updateBridgeEvent(endpoint: string, event: CalendarEvent, calendar: CalendarSource): Promise<BridgeEventResponse> {
   const providerCalendarId = calendar.providerCalendarId || calendar.id;
   const providerEventId = event.providerEventId || event.id;
-  const response = await fetch(`${bridgeBase(endpoint)}/events/${encodeURIComponent(providerCalendarId)}/${encodeURIComponent(providerEventId)}`, {
+  const response = await bridgeFetch(endpoint, `/events/${encodeURIComponent(providerCalendarId)}/${encodeURIComponent(providerEventId)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ event, calendar }),
@@ -113,7 +122,7 @@ export async function updateBridgeEvent(endpoint: string, event: CalendarEvent, 
 export async function deleteBridgeEvent(endpoint: string, event: CalendarEvent, calendar: CalendarSource) {
   const providerCalendarId = calendar.providerCalendarId || calendar.id;
   const providerEventId = event.providerEventId || event.id;
-  const response = await fetch(`${bridgeBase(endpoint)}/events/${encodeURIComponent(providerCalendarId)}/${encodeURIComponent(providerEventId)}`, {
+  const response = await bridgeFetch(endpoint, `/events/${encodeURIComponent(providerCalendarId)}/${encodeURIComponent(providerEventId)}`, {
     method: 'DELETE',
   });
   return readJson<{ ok: boolean; baas?: ConnectorState['baas'] }>(response);
