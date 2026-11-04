@@ -10,6 +10,14 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+/* Tailwind CSS 4, the styling framework osionos uses. Theme and utilities only: preflight
+   is left out because the rules below carry this app's own base styles and Tailwind's reset
+   would change them. Those rules are unlayered, so they win over a utility on any property
+   both set. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
 :root {
   color-scheme: dark;
   --calendar-bg: #111316;
