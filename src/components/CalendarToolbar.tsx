@@ -76,6 +76,7 @@ export const CalendarToolbar: React.FC<CalendarToolbarProps> = ({
       <label className="calendar-search">
         <Search size={16} />
         <input
+          name="search"
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder="Search events"

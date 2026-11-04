@@ -115,12 +115,12 @@ export const EventInspector: React.FC<EventInspectorProps> = ({
 
         <label className="calendar-field calendar-field--title">
           <span>Title</span>
-          <input value={form.title} onChange={(changeEvent) => updateField('title', changeEvent.target.value)} disabled={isReadonly} />
+          <input name="title" value={form.title} onChange={(changeEvent) => updateField('title', changeEvent.target.value)} disabled={isReadonly} />
         </label>
 
         <label className="calendar-field">
           <span>Calendar</span>
-          <select value={form.calendarId} onChange={(changeEvent) => updateField('calendarId', changeEvent.target.value)} disabled={isReadonly}>
+          <select name="calendarId" value={form.calendarId} onChange={(changeEvent) => updateField('calendarId', changeEvent.target.value)} disabled={isReadonly}>
             {(editableSources.length ? editableSources : sources).map((calendar) => (
               <option value={calendar.id} key={calendar.id}>{calendar.name}</option>
             ))}
@@ -128,14 +128,14 @@ export const EventInspector: React.FC<EventInspectorProps> = ({
         </label>
 
         <label className="calendar-toggle-row">
-          <input type="checkbox" checked={form.allDay} onChange={(changeEvent) => updateField('allDay', changeEvent.target.checked)} disabled={isReadonly} />
+          <input name="allDay" type="checkbox" checked={form.allDay} onChange={(changeEvent) => updateField('allDay', changeEvent.target.checked)} disabled={isReadonly} />
           <span>All-day</span>
         </label>
 
         <div className="calendar-field-grid">
           <label className="calendar-field">
             <span>Starts</span>
-            <input
+            <input name="start"
               type={form.allDay ? 'date' : 'datetime-local'}
               value={form.allDay ? dateInputValue(form.start) : toLocalDateTimeInput(form.start)}
               onChange={(changeEvent) => updateField('start', form.allDay ? fromDateInput(changeEvent.target.value) : fromLocalDateTimeInput(changeEvent.target.value))}
@@ -144,7 +144,7 @@ export const EventInspector: React.FC<EventInspectorProps> = ({
           </label>
           <label className="calendar-field">
             <span>Ends</span>
-            <input
+            <input name="end"
               type={form.allDay ? 'date' : 'datetime-local'}
               value={form.allDay ? dateInputValue(form.end) : toLocalDateTimeInput(form.end)}
               onChange={(changeEvent) => updateField('end', form.allDay ? fromDateInput(changeEvent.target.value) : fromLocalDateTimeInput(changeEvent.target.value))}
@@ -156,7 +156,7 @@ export const EventInspector: React.FC<EventInspectorProps> = ({
         <div className="calendar-field-grid">
           <label className="calendar-field">
             <span>Repeat</span>
-            <select value={form.repeat} onChange={(changeEvent) => updateField('repeat', changeEvent.target.value as RepeatRule)} disabled={isReadonly}>
+            <select name="repeat" value={form.repeat} onChange={(changeEvent) => updateField('repeat', changeEvent.target.value as RepeatRule)} disabled={isReadonly}>
               <option value="none">Does not repeat</option>
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
@@ -166,7 +166,7 @@ export const EventInspector: React.FC<EventInspectorProps> = ({
           </label>
           <label className="calendar-field">
             <span>Busy</span>
-            <select value={form.busyStatus} onChange={(changeEvent) => updateField('busyStatus', changeEvent.target.value as BusyStatus)} disabled={isReadonly}>
+            <select name="busyStatus" value={form.busyStatus} onChange={(changeEvent) => updateField('busyStatus', changeEvent.target.value as BusyStatus)} disabled={isReadonly}>
               <option value="busy">Busy</option>
               <option value="free">Free</option>
             </select>
@@ -174,23 +174,23 @@ export const EventInspector: React.FC<EventInspectorProps> = ({
         </div>
 
         <label className="calendar-toggle-row">
-          <input type="checkbox" checked={form.conferencing} onChange={(changeEvent) => updateField('conferencing', changeEvent.target.checked)} disabled={isReadonly} />
+          <input name="conferencing" type="checkbox" checked={form.conferencing} onChange={(changeEvent) => updateField('conferencing', changeEvent.target.checked)} disabled={isReadonly} />
           <span>Add video meeting</span>
         </label>
 
         <label className="calendar-field">
           <span>Location</span>
-          <input value={form.location || ''} onChange={(changeEvent) => updateField('location', changeEvent.target.value)} disabled={isReadonly} />
+          <input name="location" value={form.location || ''} onChange={(changeEvent) => updateField('location', changeEvent.target.value)} disabled={isReadonly} />
         </label>
 
         <label className="calendar-field">
           <span>Guests</span>
-          <input value={form.participantsText} onChange={(changeEvent) => updateField('participantsText', changeEvent.target.value)} disabled={isReadonly} placeholder="email@example.com, team@example.com" />
+          <input name="participantsText" value={form.participantsText} onChange={(changeEvent) => updateField('participantsText', changeEvent.target.value)} disabled={isReadonly} placeholder="email@example.com, team@example.com" />
         </label>
 
         <label className="calendar-field">
           <span>Visibility</span>
-          <select value={form.visibility} onChange={(changeEvent) => updateField('visibility', changeEvent.target.value as EventVisibility)} disabled={isReadonly}>
+          <select name="visibility" value={form.visibility} onChange={(changeEvent) => updateField('visibility', changeEvent.target.value as EventVisibility)} disabled={isReadonly}>
             <option value="default">Default</option>
             <option value="public">Public</option>
             <option value="private">Private</option>
@@ -199,7 +199,7 @@ export const EventInspector: React.FC<EventInspectorProps> = ({
 
         <label className="calendar-field">
           <span>Description</span>
-          <textarea value={form.description || ''} onChange={(changeEvent) => updateField('description', changeEvent.target.value)} disabled={isReadonly} rows={6} />
+          <textarea name="description" value={form.description || ''} onChange={(changeEvent) => updateField('description', changeEvent.target.value)} disabled={isReadonly} rows={6} />
         </label>
 
         <footer className="calendar-inspector__actions">
