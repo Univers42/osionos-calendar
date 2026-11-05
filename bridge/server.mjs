@@ -586,7 +586,7 @@ async function mirrorSnapshotToBaaS(account, calendars, events) {
 
 async function publicSession(extra = {}) {
   const tokens = readTokens();
-  let message = 'Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET before connecting Google Calendar.';
+  let message = 'Google sign-in is not available on this deployment.';
   if (configured()) {
     message = vaultStatus.loaded ? 'Google Calendar bridge is configured from BaaS Vault.' : 'Google Calendar bridge is configured for localhost OAuth.';
   }
