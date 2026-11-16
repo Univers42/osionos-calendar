@@ -1,17 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   types.ts                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/05/18 21:19:16 by dlesieur          #+#    #+#             */
-/*   Updated: 2026/05/18 21:19:16 by dlesieur         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
-import type { LucideIcon } from 'lucide-react';
-
 export type CalendarProvider = 'google' | 'outlook' | 'caldav' | 'local' | 'baas';
 export type CalendarSourceKind = 'google' | 'local' | 'baas';
 export type CalendarView = 'month' | 'week' | 'day' | 'agenda';
@@ -87,11 +73,3 @@ export interface CalendarRange {
   end: string;
 }
 
-export interface CommandAction {
-  id: string;
-  label: string;
-  icon: LucideIcon;
-  active?: boolean;
-  danger?: boolean;
-  onClick: () => void;
-}

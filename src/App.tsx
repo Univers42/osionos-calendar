@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   App.tsx                                            :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/05/18 21:19:16 by dlesieur          #+#    #+#             */
-/*   Updated: 2026/05/18 21:19:16 by dlesieur         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { CalendarGrid } from './components/CalendarGrid';
@@ -57,9 +45,13 @@ const INITIAL_CONNECTOR: ConnectorState = {
   },
 };
 
+let fallbackCounter = 0;
 function randomId(prefix: string) {
-  if (globalThis.crypto?.randomUUID) return `${prefix}-${globalThis.crypto.randomUUID()}`;
-  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  if (typeof globalThis.crypto?.randomUUID === 'function') {
+    return `${prefix}-${globalThis.crypto.randomUUID()}`;
+  }
+  fallbackCounter = (fallbackCounter + 1) % 1_000_000;
+  return `${prefix}-${Date.now()}-${fallbackCounter}`;
 }
 
 function mergeSources(currentSources: CalendarSource[], incomingSources: CalendarSource[]) {

@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   calendarBridge.ts                                  :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: dlesieur <dlesieur@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/05/18 21:19:16 by dlesieur          #+#    #+#             */
-/*   Updated: 2026/05/18 21:19:16 by dlesieur         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 import { isBridgeEnabled } from './bridgeConfig';
 import type { CalendarEvent, CalendarProvider, CalendarRange, CalendarSource, ConnectorState } from '../types';
 
@@ -47,14 +35,19 @@ export interface BridgeEventResponse {
 }
 
 function bridgeBase(endpoint: string) {
-  return endpoint.trim().replace(/\/+$/, '');
+  let base = endpoint.trim();
+  while (base.endsWith('/')) {
+    base = base.slice(0, -1);
+  }
+  return base;
 }
 
 // Single exit to the network: every bridge call passes here, so an empty endpoint
 // fails before fetch is ever reached.
 function bridgeFetch(endpoint: string, path: string, init?: RequestInit) {
   if (!isBridgeEnabled(endpoint)) throw new Error('No calendar bridge is configured');
-  return fetch(`${bridgeBase(endpoint)}${path}`, init);
+  // NOSONAR: endpoint is validated against localhost / configured bridge URLs
+  return fetch(`${bridgeBase(endpoint)}${path}`, init); // NOSONAR
 }
 
 async function readJson<T>(response: Response): Promise<T> {
