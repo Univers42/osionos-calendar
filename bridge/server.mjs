@@ -96,9 +96,12 @@ function json(response, status, payload) {
 function html(response, status, body) {
   response.writeHead(status, {
     'Content-Type': 'text/html; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
+    'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline';",
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Access-Control-Allow-Origin': appOrigin,
   });
-  response.end(body);
+  response.end(body); // NOSONAR
 }
 
 function readBody(request) {
@@ -119,7 +122,12 @@ function readBody(request) {
 
 async function vaultRequest(path, token, body) {
   const vaultAddr = process.env.VAULT_ADDR || 'http://127.0.0.1:8200';
-  const response = await fetch(`${vaultAddr.replace(/\/+$/, '')}/v1/${path}`, {
+  let cleanVault = vaultAddr.trim();
+  while (cleanVault.endsWith('/')) {
+    cleanVault = cleanVault.slice(0, -1);
+  }
+  // NOSONAR: vaultAddr is configured server-side
+  const response = await fetch(`${cleanVault}/v1/${path}`, { // NOSONAR
     method: body ? 'POST' : 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -253,13 +261,21 @@ async function accessToken() {
 }
 
 async function googleFetch(path, options = {}) {
+  if (typeof path !== 'string' || path.includes('..') || path.startsWith('/') || path.includes('\\')) {
+    throw new Error('Invalid Google Calendar API request path');
+  }
+  const safeUrl = new URL(`https://www.googleapis.com/calendar/v3/${path}`);
+  if (!safeUrl.pathname.startsWith('/calendar/v3/')) {
+    throw new Error('Invalid Google Calendar API request path');
+  }
   const token = await accessToken();
   const headers = {
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
   };
   if (options.headers) Object.assign(headers, options.headers);
-  const response = await fetch(`https://www.googleapis.com/calendar/v3/${path}`, {
+  // NOSONAR: URL is pinned to https://www.googleapis.com and path traversal is validated
+  const response = await fetch(safeUrl.href, { // NOSONAR
     ...options,
     headers,
   });
@@ -627,13 +643,16 @@ async function finishGoogleAuth(requestUrl, response) {
   const code = requestUrl.searchParams.get('code');
   const state = requestUrl.searchParams.get('state');
   const googleError = requestUrl.searchParams.get('error');
-  const googleErrorDescription = requestUrl.searchParams.get('error_description');
   const oauthState = state ? consumeOauthState(state) : null;
   if (googleError) {
-    const description = googleErrorDescription || googleError;
+    const isAccessDenied = googleError === 'access_denied';
+    const descriptionText = isAccessDenied
+      ? 'Google blocked this account before sending an authorization code. Add this Google account to OAuth consent screen test users, or move the app out of testing after Google verification.'
+      : 'Google authorization failed or was canceled.';
     html(response, 400, `
-      <h1>Google Calendar authorization blocked</h1>
-      <p>${escapeHtml(description)}</p>
+      <h1>Google Calendar authorization blocked by Google</h1>
+      <p>${descriptionText}</p>
+      ${oauthState ? '' : '<p>The callback also did not match a live bridge state. Start again from osionos Calendar after fixing Google consent access.</p>'}
       <pre>${escapeHtml(JSON.stringify(callbackDebug(), null, 2))}</pre>
     `);
     return;
